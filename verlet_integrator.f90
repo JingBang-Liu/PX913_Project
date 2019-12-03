@@ -37,11 +37,14 @@ CONTAINS
   FUNCTION pos2cell(position, delta)
     ! delta refers to the size of the spatial discretization step.
     ! varies by dimension: dx and dy. assignment document states that we'll be given these.
-    ! see comments in the "verlet" function regarding grid 
+    ! see comments in the "verlet" function regarding grid
+
+    ! Note! this gives the negative values of the grid!
+    ! Quick hack: add the dimensions of Ex and Ey.
     REAL(KIND=REAL64), INTENT(IN) :: position ! position to be converted to cell
     REAL(KIND=REAL64), INTENT(IN) :: delta ! position to be converted to cell
     INTEGER :: pos2cell    
-    pos2cell = FLOOR((position - 1.0_REAL64)/delta) + 1
+    pos2cell = FLOOR((position - 1.0_REAL64)/delta)
   END FUNCTION pos2cell
       
   SUBROUTINE Verlet(data_entry, Ex, Ey, init_pos, init_vel, dx, dy, dt, time)
@@ -70,6 +73,7 @@ CONTAINS
     
     INTEGER :: i, time, cellx, celly ! number of time-steps and loop variables
     INTEGER, DIMENSION(2) :: dims
+    dims = SHAPE(Ex)
    
     ! the initial data.
     pos_x = init_pos(1)
@@ -82,6 +86,7 @@ CONTAINS
     acc_y = Ey(pos2cell(pos_x, dx), pos2cell(pos_y, dy)) 
 
     DO i = 1, time
+       ! data input into the type, data_entry: this is the technical output.
        data_entry%pos_history(1,i) = pos_x
        data_entry%pos_history(2,i) = pos_y
        data_entry%vel_history(1,i) = vel_x
@@ -97,11 +102,12 @@ CONTAINS
        pos_x = pos_x + vel_x*dt + (0.5)*(acc_x)*(acc_x)*dt*dt
        pos_y = pos_y + vel_y*dt + (0.5)*(acc_y)*(acc_y)*dt*dt
 
-       cellx = pos2cell(pos_x, dx)
-       celly = pos2cell(pos_y, dy)
+       ! You have to multiply the dimensions 
+       cellx = pos2cell(pos_x, dx) + dims(1)
+       celly = pos2cell(pos_y, dy) + dims(2)
        
        ! conditional doesn't allow us to pick values of the array that are larger than the array size.
-       IF ((cellx.GT.(-1)).OR.(celly.GT.(-1))) THEN
+       IF ((cellx.GT.(dims(1)-1)).OR.(celly.GT.(dims(2)-1))) THEN
           acc_x = 0.0
           acc_y = 0.0
           vel_x = 0.0
@@ -119,50 +125,3 @@ CONTAINS
   END SUBROUTINE Verlet
   
 END MODULE verlet_integrator
-
-
-PROGRAM main
-  USE kinds
-  USE verlet_integrator
-  
-  IMPLICIT NONE
-  
-  REAL(KIND=REAL64), DIMENSION(10, 10) :: Ex, Ey
-  REAL(KIND=REAL64), DIMENSION(2) :: init_pos
-  REAL(KIND=REAL64), DIMENSION(2) :: init_vel
-  REAL(KIND=REAL64) :: dx, dy, dt
-  INTEGER :: time = 20
-  INTEGER :: i
-  TYPE(kinematics) :: test
-  
-  Ex = 0.0
-  Ey = 0.0
-  init_pos(1) = 0.0
-  init_pos(2) = 0.0
-  init_vel(1) = 10
-  init_vel(2) = 10
-  dx = 0.1
-  dy = 0.1
-  dt = 0.01
-
-  CALL fillType(test, time)
-
-  ! REMOVING THIS BREAKS THE CODE
-  ! NOT SURE WHY
-  !------------------------------------------------------------------------------  
-  print*, shape(test%pos_history)
-  print*, shape(test%vel_history)
-  print*, shape(test%acc_history)
-  !------------------------------------------------------------------------------
-  CALL verlet(test, Ex, Ey, init_pos, init_vel, dx, dy, dt, time)
-
-  DO i = 1, time
-     print*, test%pos_history(1, i), test%pos_history(2, i)
-     print*, test%vel_history(1, i), test%vel_history(2, i)
-     print*, test%acc_history(1, i), test%acc_history(2, i)
-     print*, ""
-  END DO
-  
-  CALL emptyType(test)
-  
-END PROGRAM main
