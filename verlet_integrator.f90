@@ -9,7 +9,7 @@ MODULE verlet_integrator
   TYPE kinematics
      ! global type
      ! This stores all of the kinematic data of a run.
-     INTEGER, DIMENSION(:,:), ALLOCATABLE :: pos_history ! position history
+     REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE :: pos_history ! position history
      REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE :: vel_history ! velocity history
      REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE :: acc_history ! acceleration history          
   END type kinematics
@@ -26,7 +26,7 @@ CONTAINS
     pos2cell = FLOOR((position - 1.0_REAL64)/delta) + 1
   END FUNCTION pos2cell
       
-  FUNCTION verlet(Ex, Ey, init_pos, init_vel, dx, dy, dt, time)
+  FUNCTION Verlet(Ex, Ey, init_pos, init_vel, dx, dy, dt, time)
     ! Input:
     !    Ex, Ey - the electic fields
     !    init_pos, init_vel - the initial positions and velocities (in a vector format)
@@ -38,7 +38,8 @@ CONTAINS
 !!!! verlet integrator and the gauss-seidel method.
 !!!! Right now, the grid sizes are being hard-coded into the function.
 !!!!    
-    TYPE(kinematics) :: verlet    
+    TYPE(kinematics) :: Verlet
+    
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:) :: Ex, Ey ! field matrix
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(2) :: init_pos ! initial position
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(2) :: init_vel ! initial position
@@ -49,8 +50,10 @@ CONTAINS
     REAL(KIND=REAL64) :: acc_y, acc_x ! accelerations
     REAL(KIND=REAL64) :: old_acc_y, old_acc_x ! history variables for accelerations
     
-    INTEGER :: i, time ! number of time-steps and loop variables
-
+    INTEGER :: i, time, cellx, celly ! number of time-steps and loop variables
+    INTEGER, DIMENSION(2) :: dims
+    dims = SHAPE(Ex)
+   
     ! the initial data.
     pos_x = init_pos(1)
     pos_y = init_pos(2)
@@ -58,9 +61,10 @@ CONTAINS
     vel_y = init_vel(2)
     ! this bit uses the pos2cel function to access the electric fields.
     acc_x = Ex(pos2cell(init_pos(1), dx), pos2cell(init_pos(2), dy))
-    acc_y = Ey(pos2cell(init_pos(1), dx), pos2cell(init_pos(2), dy))
+    acc_y = Ey(pos2cell(init_pos(1), dx), pos2cell(init_pos(2), dy)) 
 
     DO i = 1, time
+       
        ! store the accelerations
        old_acc_x = acc_x
        old_acc_y = acc_y
@@ -68,18 +72,29 @@ CONTAINS
        ! calculate new positions
        pos_x = pos_x + vel_x*dt + (0.5)*(acc_x)*(acc_x)*dt*dt
        pos_y = pos_y + vel_y*dt + (0.5)*(acc_y)*(acc_y)*dt*dt
-       ! accelerations have to be calculated before velocites.
-       acc_x = Ex(pos2cell(pos_x, dx), pos2cell(pos_y, dy))
-       acc_y = Ey(pos2cell(pos_y, dx), pos2cell(pos_y, dy))
-       ! make use of old_acc here
-       vel_x = vel_x + dt*(0.5*(acc_x + old_acc_x))
-       vel_y = vel_y + dt*(0.5*(acc_y + old_acc_y))
-       
-       print*, pos_x, pos_y, vel_x, vel_y, acc_x, acc_y
 
+       cellx = pos2cell(pos_x, dx)
+       celly = pos2cell(pos_y, dy)
+       
+       ! conditional doesn't allow us to pick values of the array that are larger than the array size.
+       IF ((cellx.GT.dims(1)-1).OR.(celly.GT.dims(2)-1)) THEN
+          acc_x = 0.0
+          acc_y = 0.0
+          vel_x = 0.0
+          vel_y = 0.0
+       ELSE
+          ! accelerations have to be calculated before velocites.
+          acc_x = Ex(cellx, celly)
+          acc_y = Ey(cellx, celly)
+          ! make use of old_acc here
+          vel_x = vel_x + dt*(0.5*(acc_x + old_acc_x))
+          vel_y = vel_y + dt*(0.5*(acc_y + old_acc_y))
+       END IF
+       
+       print*, cellx, celly, pos_x, pos_y, vel_x, vel_y, acc_x, acc_y
     END DO
-    
-  END FUNCTION verlet
+        
+  END FUNCTION Verlet
   
 END MODULE verlet_integrator
 
@@ -93,20 +108,20 @@ PROGRAM main
   REAL(KIND=REAL64), DIMENSION(2) :: init_pos
   REAL(KIND=REAL64), DIMENSION(2) :: init_vel
   REAL(KIND=REAL64) :: dx, dy, dt
-  INTEGER :: time = 10
+  INTEGER :: time = 20
+  
   TYPE(kinematics) :: test  
 
   Ex = 0.0
   Ey = 0.0
   init_pos(1) = 0.0
   init_pos(2) = 0.0
-  init_vel(1) = 20
-  init_vel(2) = 20
+  init_vel(1) = 10
+  init_vel(2) = 10
   dx = 0.1
   dy = 0.1
   dt = 0.01
   
   test = verlet(Ex, Ey, init_pos, init_vel, dx, dy, dt, time)
-
-
+  
 END PROGRAM main
