@@ -52,13 +52,8 @@ CONTAINS
     !    Ex, Ey - the electic fields
     !    init_pos, init_vel - the initial positions and velocities (in a vector format)
     !    dx, dy, dt - the grid partition lengths along with the magnitude of the time step
-    !    time - number of time steps
-    
-!!!!
-!!!! We need to figure out the best way to organise the grid sizes between the
-!!!! verlet integrator and the gauss-seidel method.
-!!!! Right now, the grid sizes are being hard-coded into the function.
-!!!!    
+    !    time - number of time steps    
+
     TYPE(kinematics) :: data_entry
     
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:) :: Ex, Ey ! field matrix
