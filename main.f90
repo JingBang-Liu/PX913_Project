@@ -44,12 +44,17 @@ PROGRAM main
   peoblem_succ=get_arg('problem', problem)
 
   if (nx_succ .AND. ny_succ .AND. problem_succ)
-    print*, "Arguments Passed"
-  else
-    print*, "Arguments Missing"
+    print*, "Command Line Arguments Passed"
+  else 
+    print*, "Command Line Arguments Missing"
     return
   end if
   
+  ALLOCATE( rho(nx, ny) )
+  ALLOCATE( phi(0:nx+1, 0:ny+1) )
+  ALLOCATE( Ex(nx, ny) )
+  ALLOCATE( Ey(nx, ny) )
+ 
   CALL create_axis(x, nx, xrange, 1)
   CALL create_axis(y, ny, yrange, 1)
 
