@@ -20,17 +20,15 @@ MODULE netcdf_write
 
   CONTAINS
 
-  SUBROUTINE write_electrostatics(field,k,r_d,filename,ierr)
+  SUBROUTINE write_electrostatics(kin_data,filename,ierr)
      
     !!!! Define output variables
-    INTEGER, INTENT(IN), DIMENSION(:,:) :: larr
-    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:) :: history
-    TYPE(run_data), INTENT(IN) :: r_d
+    TYPE(kinematics) :: kin_data
     INTEGER, DIMENSION(:), ALLOCATABLE :: x_axis, y_axis, t_axis
     CHARACTER(LEN=*), INTENT(IN) :: filename
     INTEGER, PARAMETER :: ndims = 2
     !!!! Define dimensions of output variables
-    CHARACTER(LEN=1), DIMENSION(ndims) :: dims_larr=(/"x", "y" /)
+    CHARACTER(LEN=1), DIMENSION(ndims) :: dims_=(/"x", "y" /)
     CHARACTER(LEN=1), DIMENSION(1) :: dims_history=(/"t"/)
     CHARACTER(LEN=1), DIMENSION(1) :: dims_x_axis=(/"X"/)
     CHARACTER(LEN=1), DIMENSION(1) :: dims_y_axis=(/"Y"/)
