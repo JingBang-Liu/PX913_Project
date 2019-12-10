@@ -2,7 +2,6 @@
 ! Author: David Liu
 ! Notes: Example of verlet integration use.
 
-
 PROGRAM main
   USE kinds
   USE domain_tools
@@ -16,6 +15,7 @@ PROGRAM main
   REAL(KIND=REAL64) :: dx, dy, dt
   INTEGER :: time   
   INTEGER :: i, j
+  INTEGER :: nx, ny
   TYPE(kinematics) :: kin_data
 
   REAL(KIND=REAL64), DIMENSION(:), ALLOCATABLE :: x, y
@@ -23,7 +23,7 @@ PROGRAM main
   REAL(KIND=REAL64), DIMENSION(2) :: yrange=(/-1,1/)
   REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE :: rho, phi, Ex, Ey 
   CHARACTER(len=20) :: problem 
-  LOGICAL nx_succ, ny_succ, problem_succ
+  LOGICAL :: nx_succ, ny_succ, problem_succ
  
   ! first fill in the type that stores all the data.
   ! test = the type you're filling in
@@ -38,16 +38,15 @@ PROGRAM main
   ! dt = time step
   ! time = number of time steps
 
-  CALL parse_arg() 
+  CALL parse_args() 
   nx_succ=get_arg('nx', nx)
   ny_succ=get_arg('ny', ny)
-  peoblem_succ=get_arg('problem', problem)
+  problem_succ=get_arg('problem', problem)
 
-  if (nx_succ .AND. ny_succ .AND. problem_succ)
+  if (nx_succ .AND. ny_succ .AND. problem_succ) then
     print*, "Command Line Arguments Passed"
   else 
     print*, "Command Line Arguments Missing"
-    return
   end if
   
   ALLOCATE( rho(nx, ny) )
@@ -63,6 +62,7 @@ PROGRAM main
 
   CALL charge(rho, nx ,ny, problem, x, y)
   CALL potential(phi, nx, ny, rho, dx, dy)
+  CALL field(Ex, Ey, phi, dx, dy, nx, ny)
   
   dt = 0.01
   time = 1000
@@ -74,11 +74,19 @@ PROGRAM main
 
   ! access the values like this:
   ! kin_data%pos_history(1, i), kin_data%vel_history(1, i), kin_data%acc_history(1, i)
-
   ! NetCDF section
-  
+  DO i = 1, time
+     PRINT*, kin_data%pos_history(1, i), kin_data%pos_history(2, i)
+  END DO
+  PRINT*, Ex
+  PRINT*, Ey
+
      
   ! deallocates the arrays associated with the calledtype.
   CALL emptyType(kin_data)
+  DEALLOCATE(rho)
+  DEALLOCATE(phi)
+  DEALLOCATE(Ex)
+  DEALLOCATE(Ey)
   
 END PROGRAM main
