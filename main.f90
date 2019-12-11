@@ -14,7 +14,7 @@ PROGRAM main
   REAL(KIND=REAL64), DIMENSION(2) :: init_vel
   REAL(KIND=REAL64) :: dx, dy, dt
   INTEGER :: time   
-  INTEGER :: i, j
+  !INTEGER :: i
   INTEGER :: nx, ny
   TYPE(kinematics) :: kin_data
 
@@ -75,11 +75,11 @@ PROGRAM main
   ! access the values like this:
   ! kin_data%pos_history(1, i), kin_data%vel_history(1, i), kin_data%acc_history(1, i)
   ! NetCDF section
-  DO i = 1, time
-     PRINT*, kin_data%pos_history(1, i), kin_data%pos_history(2, i)
-  END DO
-  PRINT*, Ex
-  PRINT*, Ey
+  !DO i = 1, time
+  !   PRINT*, kin_data%pos_history(1, i), kin_data%pos_history(2, i)
+  !END DO
+  !PRINT*, Ex
+  !PRINT*, Ey
 
      
   ! deallocates the arrays associated with the calledtype.

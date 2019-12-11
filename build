@@ -1,0 +1,19 @@
+#!/bin/bash
+
+## This script is copied and modified from Chris and Heather's example script to adapt to our
+## purpose
+
+# List of all f90 files to compile
+myprogramfiles="kinds.f90 command_line.f90 create_axis.f90 gauss-seidel.f90 verlet_integrator.f90 main.f90"
+
+# Name of compiled file
+outfile="main"
+
+# Name of compiler
+fc=gfortran
+
+# Actual compile line.
+$fc -g -std=f2003 -Wall $myprogramfiles -o $outfile 
+
+# Example of command to execute program
+./main nx=100 ny=100 problem=double
