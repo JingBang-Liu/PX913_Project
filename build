@@ -4,7 +4,7 @@
 ## purpose
 
 # List of all f90 files to compile
-myprogramfiles="kinds.f90 command_line.f90 create_axis.f90 gauss-seidel.f90 verlet_integrator.f90 main.f90"
+myprogramfiles="kinds.f90 command_line.f90 create_axis.f90 gauss-seidel.f90 verlet_integrator.f90 write_netcdf.f90 main.f90"
 
 # Name of compiled file
 outfile="main"
@@ -12,8 +12,18 @@ outfile="main"
 # Name of compiler
 fc=gfortran
 
+# Use nf-config to grab the compile and link flags. Backticks run command and grab output
+fflags=`nf-config --fflags`
+flibs=`nf-config --flibs`
+
 # Actual compile line.
-$fc -g -std=f2003 -Wall $myprogramfiles -o $outfile 
+$fc -g -std=f2003 -Wall $fflags $myprogramfiles $flibs -o $outfile 
 
 # Example of command to execute program
-./main nx=100 ny=100 problem=double
+./main nx=100 ny=100 problem=single
+
+# Remove all .mod files
+rm *.mod
+
+# Plot Ex and trajectory
+python3 read_plot_NetCDF.py

@@ -8,8 +8,10 @@ PROGRAM main
   USE command_line
   USE verlet_integrator
   USE gauss_seidel
+  USE netcdf_write
   IMPLICIT NONE
 
+  !!! variables for the verlet integration
   REAL(KIND=REAL64), DIMENSION(2) :: init_pos
   REAL(KIND=REAL64), DIMENSION(2) :: init_vel
   REAL(KIND=REAL64) :: dx, dy, dt
@@ -19,6 +21,11 @@ PROGRAM main
   TYPE(kinematics) :: kin_data
   TYPE(run_data) :: r_d
 
+  !!! variables for Netcdf
+  CHARACTER(LEN=25) :: filename="electrostatics_data.nc"
+  INTEGER :: ierr
+
+  !!! variables for the electric field
   REAL(KIND=REAL64), DIMENSION(:), ALLOCATABLE :: x, y
   REAL(KIND=REAL64), DIMENSION(2) :: xrange=(/-1,1/) 
   REAL(KIND=REAL64), DIMENSION(2) :: yrange=(/-1,1/)
@@ -52,7 +59,7 @@ PROGRAM main
 
   r_d%run_data_nx = nx
   r_d%run_data_ny = ny
-  r_d%run_data_init = problem
+  r_d%run_data_problem = problem
   
   ALLOCATE( rho(nx, ny) )
   ALLOCATE( phi(0:nx+1, 0:ny+1) )
@@ -80,6 +87,7 @@ PROGRAM main
   ! access the values like this:
   ! kin_data%pos_history(1, i), kin_data%vel_history(1, i), kin_data%acc_history(1, i)
   ! NetCDF section
+  CALL write_electrostatics(rho,phi,Ex,Ey,kin_data,r_d,filename,ierr)
   !DO i = 1, time
   !   PRINT*, kin_data%pos_history(1, i), kin_data%pos_history(2, i)
   !END DO

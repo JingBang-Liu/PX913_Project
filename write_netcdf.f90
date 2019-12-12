@@ -9,13 +9,14 @@ MODULE netcdf_write
 
   USE kinds
   USE netcdf
+  USE verlet_integrator
 
   IMPLICIT NONE
 
   !!!! Define a type for run data so you don't have to type a lot
   TYPE :: run_data
     INTEGER :: run_data_nx, run_data_ny
-    CHARACTER(LEN=*) :: run_data_init
+    CHARACTER(LEN=25) :: run_data_problem
   END TYPE
 
   CONTAINS
@@ -30,12 +31,18 @@ MODULE netcdf_write
     CHARACTER(LEN=*), INTENT(IN) :: filename
     INTEGER :: ierr
     !!! Parameters define dimensions
-    INTEGER, PARAMETER :: ndims1 = 1
+    !INTEGER, PARAMETER :: ndims1 = 1
     INTEGER, PARAMETER :: ndims2 = 2
     !!! Define dimensions for output variables
-    CHARACTER(LEN=*), DIMENSION(ndims2) :: dims_time=(/"axis","t"/)
-    CHARACTER(LEN=1), DIMENSION(ndims2) :: dims_grid=(/"x","y"/)
-    CHARACTER(LEN=1), DIMENSION(ndims1) :: dims_nx=(/"x"/)
+    CHARACTER(LEN=5), DIMENSION(ndims2) :: dims_rho=(/"rho_x","rho_y"/)
+    CHARACTER(LEN=5), DIMENSION(ndims2) :: dims_phi=(/"phi_x","phi_y"/)
+    CHARACTER(LEN=4), DIMENSION(ndims2) :: dims_Ex=(/"Ex_x","Ex_y"/)
+    CHARACTER(LEN=4), DIMENSION(ndims2) :: dims_Ey=(/"Ey_x","Ey_y"/)
+    CHARACTER(LEN=8), DIMENSION(ndims2) :: dims_pos=(/"pos_grid","pos_t   "/)
+    CHARACTER(LEN=8), DIMENSION(ndims2) :: dims_vel=(/"vel_grid","vel_t   "/)
+    CHARACTER(LEN=8), DIMENSION(ndims2) :: dims_acc=(/"acc_grid","acc_t   "/)
+    !CHARACTER(LEN=1), DIMENSION(ndims1) :: dims_nx=(/"x"/)
+    !CHARACTER(LEN=1), DIMENSION(ndims1) :: dims_ny=(/"y"/)
     !!! Define the size ids for output variables
     INTEGER, DIMENSION(ndims2) :: sizes_rho, sizes_phi, sizes_Ex, sizes_Ey
     INTEGER, DIMENSION(ndims2) :: sizes_pos, sizes_vel, sizes_acc
@@ -46,6 +53,7 @@ MODULE netcdf_write
     INTEGER :: var_id_rho, var_id_phi, var_id_Ex, var_id_Ey, var_id_pos, var_id_vel, var_id_acc
     !!! Define file id
     INTEGER :: file_id 
+    INTEGER :: i
 
     !!! Get sizes of variables
     sizes_rho = SHAPE(rho)
@@ -66,89 +74,126 @@ MODULE netcdf_write
     END IF
 
     !!!! Add run datas to global attribute
-    ierr = nf90_put_att(file_id,NF90_GLOBAL,"nx",r_d%run_data_N)
+    ierr = nf90_put_att(file_id,NF90_GLOBAL,"nx",r_d%run_data_nx)
     IF (ierr /= nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
-    ierr = nf90_put_att(file_id,NF90_GLOBAL,"ny",r_d%run_data_N)
+    ierr = nf90_put_att(file_id,NF90_GLOBAL,"ny",r_d%run_data_ny)
     IF (ierr /= nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
-    ierr = nf90_put_att(file_id,NF90_GLOBAL,"problem",r_d%run_data_init)
+    ierr = nf90_put_att(file_id,NF90_GLOBAL,"problem",r_d%run_data_problem)
     IF (ierr /= nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
 
-    !!!! Define dim id and var id for larr, check for any error
-    DO i=1,ndims
-      ierr = nf90_def_dim(file_id,dims_larr(i),sizes_larr(i),dim_ids_larr(i))
+    !!!! Define dim id and var id for rho, check for any error
+    DO i=1,ndims2
+      ierr = nf90_def_dim(file_id,dims_rho(i),sizes_rho(i),dim_ids_rho(i))
       IF (ierr /= nf90_noerr) THEN
         PRINT*, TRIM(nf90_strerror(ierr))
         RETURN
       END IF
     END DO
 
-    ierr = nf90_def_var(file_id, "cell_status", NF90_INT, dim_ids_larr, var_id_larr)
+    ierr = nf90_def_var(file_id, "rho_charge_density", NF90_DOUBLE, dim_ids_rho, var_id_rho)
     IF (ierr /=nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
     
-    !!!! Define dim id and var id for history, check for any error
-    ierr = nf90_def_dim(file_id,dims_history(1),sizes_history,dim_ids_history)
+    !!!! Define dim id and var id for phi, check for any error
+    DO i=1,ndims2
+      ierr = nf90_def_dim(file_id,dims_phi(i),sizes_phi(i),dim_ids_phi(i))
+      IF (ierr /=nf90_noerr) THEN
+        PRINT*, TRIM(nf90_strerror(ierr))
+        RETURN
+      END IF
+    END DO
+
+    ierr = nf90_def_var(file_id, "phi_electric_potential", NF90_DOUBLE, dim_ids_phi, var_id_phi)
     IF (ierr /=nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
 
-    ierr = nf90_def_var(file_id, "time_history", NF90_DOUBLE, dim_ids_history, var_id_history)
-    IF (ierr /=nf90_noerr) THEN
-      PRINT*, TRIM(nf90_strerror(ierr))
-      RETURN
-    END IF
+    !!!! Define dim id and var id for Ex, check for any error
+    DO i=1,ndims2
+      ierr = nf90_def_dim(file_id,dims_Ex(i),sizes_Ex(i),dim_ids_Ex(i))
+      IF (ierr /= nf90_noerr) THEN
+        PRINT*, TRIM(nf90_strerror(ierr))
+        RETURN
+      END IF
+    END DO
 
-    !!!! Define dim id and var id for x_axis, check for any error
-    ierr = nf90_def_dim(file_id,dims_x_axis(1),sizes_larr(1),dim_ids_x_axis)
+    ierr = nf90_def_var(file_id,"Ex_field_intensity",NF90_DOUBLE,dim_ids_Ex,var_id_Ex)
     IF (ierr /= nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
 
-    ierr = nf90_def_var(file_id,"x_axis",NF90_INT,dim_ids_x_axis,var_id_x_axis)
+    !!!! Define dim id and var id for Ey, check for any error
+    DO i=1,ndims2
+      ierr = nf90_def_dim(file_id,dims_Ey(i),sizes_Ey(i),dim_ids_Ey(i))
+      IF (ierr /= nf90_noerr) THEN
+        PRINT*, TRIM(nf90_strerror(ierr))
+        RETURN
+      END IF
+    END DO
+
+    ierr = nf90_def_var(file_id,"Ey_field_intensity",NF90_DOUBLE,dim_ids_Ey,var_id_Ey)
     IF (ierr /= nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
 
-    !!!! Define dim id and var id for y_axis, check for any error
-    ierr = nf90_def_dim(file_id,dims_y_axis(1),sizes_larr(2),dim_ids_y_axis)
+    !!!! Define dim id and var id for particle postision, check for any error
+    DO i=1,ndims2
+      ierr = nf90_def_dim(file_id,dims_pos(i),sizes_pos(i),dim_ids_pos(i))
+      IF (ierr /= nf90_noerr) THEN
+        PRINT*, TRIM(nf90_strerror(ierr))
+        RETURN
+      END IF
+    END DO
+
+    ierr = nf90_def_var(file_id,"particle_position",NF90_DOUBLE,dim_ids_pos,var_id_pos)
     IF (ierr /= nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
+    
+    !!!! Define dim id and var id for particle velocity, check for any error
+    DO i=1,ndims2
+      ierr = nf90_def_dim(file_id,dims_vel(i),sizes_vel(i),dim_ids_vel(i))
+      IF (ierr /= nf90_noerr) THEN
+        PRINT*, TRIM(nf90_strerror(ierr))
+        RETURN
+      END IF
+    END DO
 
-    ierr = nf90_def_var(file_id,"y_axis",NF90_INT,dim_ids_y_axis,var_id_y_axis)
+    ierr = nf90_def_var(file_id,"particle_velocity",NF90_DOUBLE,dim_ids_vel,var_id_vel)
     IF (ierr /= nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
+    
+    !!!! Define dim id and var id for particle acceleration, check for any error
+    DO i=1,ndims2
+      ierr = nf90_def_dim(file_id,dims_acc(i),sizes_acc(i),dim_ids_acc(i))
+      IF (ierr /= nf90_noerr) THEN
+        PRINT*, TRIM(nf90_strerror(ierr))
+        RETURN
+      END IF
+    END DO
 
-    !!!! Define dim id and var id for t_axis, check for any error
-    ierr = nf90_def_dim(file_id,dims_t_axis(1),sizes_history,dim_ids_t_axis)
+    ierr = nf90_def_var(file_id,"particle_acceleration",NF90_DOUBLE,dim_ids_acc,var_id_acc)
     IF (ierr /= nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
-
-    ierr = nf90_def_var(file_id,"t_axis",NF90_INT,dim_ids_t_axis,var_id_t_axis)
-    IF (ierr /= nf90_noerr) THEN
-      PRINT*, TRIM(nf90_strerror(ierr))
-      RETURN
-    END IF
-
 
     !!!! Finish defining metadata
     ierr = nf90_enddef(file_id)
@@ -157,36 +202,55 @@ MODULE netcdf_write
       RETURN
     END IF
     
-    !!!! Write larr into file
-    ierr = nf90_put_var(file_id, var_id_larr, larr) 
+    !!!! Write rho into file
+    ierr = nf90_put_var(file_id, var_id_rho, rho) 
     IF (ierr /=nf90_noerr) THEN
-      PRINT*, TRIM(nf90_strerror(ierr))
+      PRINT*, TRIM(nf90_strerror(ierr)), "rho"
       RETURN
     END IF
 
-    !!!! Write history into file
-    ierr = nf90_put_var(file_id, var_id_history, history)
+    !!!! Write phi into file
+    ierr = nf90_put_var(file_id, var_id_phi, phi)
     IF (ierr /=nf90_noerr) THEN
-      PRINT*, TRIM(nf90_strerror(ierr))
+      PRINT*, TRIM(nf90_strerror(ierr)), "phi"
       RETURN
     END IF
 
-    !!!! Write x_axis
-    ierr = nf90_put_var(file_id,var_id_x_axis, x_axis)
+    !!!! Write Ex
+    ierr = nf90_put_var(file_id,var_id_Ex, Ex)
     IF (ierr /=nf90_noerr) THEN
-      PRINT*, TRIM(nf90_strerror(ierr))
+      PRINT*, TRIM(nf90_strerror(ierr)), "Ex"
       RETURN
     END IF
-    ierr = nf90_put_var(file_id,var_id_y_axis, y_axis)
+
+    !!!! Write Ey
+    ierr = nf90_put_var(file_id,var_id_Ey, Ey)
     IF (ierr /=nf90_noerr) THEN
-      PRINT*, TRIM(nf90_strerror(ierr))
+      PRINT*, TRIM(nf90_strerror(ierr)), "Ey"
       RETURN
     END IF
-    ierr = nf90_put_var(file_id,var_id_t_axis, t_axis)
+
+    !!!! Write particle position
+    ierr = nf90_put_var(file_id,var_id_pos, kin_data%pos_history)
     IF (ierr /=nf90_noerr) THEN
-      PRINT*, TRIM(nf90_strerror(ierr))
+      PRINT*, TRIM(nf90_strerror(ierr)), "pos"
       RETURN
     END IF
+    
+    !!!! Write particle velocity
+    ierr = nf90_put_var(file_id,var_id_vel, kin_data%vel_history)
+    IF (ierr /=nf90_noerr) THEN
+      PRINT*, TRIM(nf90_strerror(ierr)), "vel"
+      RETURN
+    END IF
+
+    !!!! Write particle acceleration
+    ierr = nf90_put_var(file_id,var_id_acc, kin_data%acc_history)
+    IF (ierr /=nf90_noerr) THEN
+      PRINT*, TRIM(nf90_strerror(ierr)), "acc"
+      RETURN
+    END IF
+
 
     !!!! Close the file
     ierr = nf90_close(file_id)
@@ -194,10 +258,6 @@ MODULE netcdf_write
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
-    DEALLOCATE(x_axis)
-    DEALLOCATE(y_axis)
-    DEALLOCATE(t_axis)
-
   END SUBROUTINE write_electrostatics
 
 END MODULE netcdf_write
