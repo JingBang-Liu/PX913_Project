@@ -1,5 +1,5 @@
 ! File name: main.f90
-! Author: David Liu
+! Author: JingBang Liu
 ! Notes: Example of verlet integration use.
 
 PROGRAM main
@@ -17,6 +17,7 @@ PROGRAM main
   !INTEGER :: i
   INTEGER :: nx, ny
   TYPE(kinematics) :: kin_data
+  TYPE(run_data) :: r_d
 
   REAL(KIND=REAL64), DIMENSION(:), ALLOCATABLE :: x, y
   REAL(KIND=REAL64), DIMENSION(2) :: xrange=(/-1,1/) 
@@ -48,6 +49,10 @@ PROGRAM main
   else 
     print*, "Command Line Arguments Missing"
   end if
+
+  r_d%run_data_nx = nx
+  r_d%run_data_ny = ny
+  r_d%run_data_init = problem
   
   ALLOCATE( rho(nx, ny) )
   ALLOCATE( phi(0:nx+1, 0:ny+1) )

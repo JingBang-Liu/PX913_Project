@@ -1,7 +1,7 @@
 !> @brief Module that writes charge density, potential, field strength
 !>        particle trajectory, particle velocity, particle acceleration
 !>        into a netCDF file.
-!> @note 
+!> @Author: JingBang Liu 
 !>       
 !> @note the is greatly inspired from the
 !>       module write_netcdf written by CS Brady and H Ratcliffe
@@ -14,56 +14,47 @@ MODULE netcdf_write
 
   !!!! Define a type for run data so you don't have to type a lot
   TYPE :: run_data
-    INTEGER :: run_data_N, run_data_T
-    CHARACTER(LEN=25) :: run_data_init
+    INTEGER :: run_data_nx, run_data_ny
+    CHARACTER(LEN=*) :: run_data_init
   END TYPE
 
   CONTAINS
 
-  SUBROUTINE write_electrostatics(kin_data,filename,ierr)
+  SUBROUTINE write_electrostatics(rho,phi,Ex,Ey,kin_data,r_d,filename,ierr)
+
      
-    !!!! Define output variables
-    TYPE(kinematics) :: kin_data
-    INTEGER, DIMENSION(:), ALLOCATABLE :: x_axis, y_axis, t_axis
+    !!!! Define input variables
+    REAL(KIND=REAL64), DIMENSION(:,:), INTENT(IN) :: rho, phi, Ex, Ey
+    TYPE(kinematics), INTENT(IN) :: kin_data
+    TYPE(run_data) :: r_d
     CHARACTER(LEN=*), INTENT(IN) :: filename
-    INTEGER, PARAMETER :: ndims = 2
-    !!!! Define dimensions of output variables
-    CHARACTER(LEN=1), DIMENSION(ndims) :: dims_=(/"x", "y" /)
-    CHARACTER(LEN=1), DIMENSION(1) :: dims_history=(/"t"/)
-    CHARACTER(LEN=1), DIMENSION(1) :: dims_x_axis=(/"X"/)
-    CHARACTER(LEN=1), DIMENSION(1) :: dims_y_axis=(/"Y"/)
-    CHARACTER(LEN=1), DIMENSION(1) :: dims_t_axis=(/"T"/)
-    !!!! Define sizes and dimension ids for output variables
-    INTEGER, DIMENSION(ndims) :: sizes_larr, dim_ids_larr
-    INTEGER :: sizes_history, dim_ids_history
-    INTEGER :: dim_ids_x_axis, dim_ids_y_axis, dim_ids_t_axis 
-    !!!! Define file id and variables ids for output variables
-    INTEGER :: file_id, var_id_larr, var_id_history, var_id_initial_grid, i
-    INTEGER :: var_id_x_axis, var_id_y_axis, var_id_t_axis
     INTEGER :: ierr
-    
+    !!! Parameters define dimensions
+    INTEGER, PARAMETER :: ndims1 = 1
+    INTEGER, PARAMETER :: ndims2 = 2
+    !!! Define dimensions for output variables
+    CHARACTER(LEN=*), DIMENSION(ndims2) :: dims_time=(/"axis","t"/)
+    CHARACTER(LEN=1), DIMENSION(ndims2) :: dims_grid=(/"x","y"/)
+    CHARACTER(LEN=1), DIMENSION(ndims1) :: dims_nx=(/"x"/)
+    !!! Define the size ids for output variables
+    INTEGER, DIMENSION(ndims2) :: sizes_rho, sizes_phi, sizes_Ex, sizes_Ey
+    INTEGER, DIMENSION(ndims2) :: sizes_pos, sizes_vel, sizes_acc
+    !!! Define the dimension ids for output variables
+    INTEGER, DIMENSION(ndims2) :: dim_ids_rho, dim_ids_phi, dim_ids_Ex, dim_ids_Ey
+    INTEGER, DIMENSION(ndims2) :: dim_ids_pos, dim_ids_vel, dim_ids_acc
+    !!! Define variable ids for output variables
+    INTEGER :: var_id_rho, var_id_phi, var_id_Ex, var_id_Ey, var_id_pos, var_id_vel, var_id_acc
+    !!! Define file id
+    INTEGER :: file_id 
 
-
-    sizes_larr = SHAPE(larr)
-    sizes_history = SIZE(history)
-
-    !!!! Generate axis
-    ALLOCATE(x_axis(sizes_larr(1)))
-    ALLOCATE(y_axis(sizes_larr(2)))
-    ALLOCATE(t_axis(sizes_history))
-    x_axis = 1
-    y_axis = 1
-    t_axis = 0
-    DO i=2,sizes_larr(1)
-      x_axis(i) = x_axis(i-1) + 1
-    END DO
-    DO i=2,sizes_larr(2)
-      y_axis(i) = y_axis(i-1) + 1
-    END DO
-    DO i=2,sizes_history
-      t_axis(i) = t_axis(i-1) + 1
-    END DO
-      
+    !!! Get sizes of variables
+    sizes_rho = SHAPE(rho)
+    sizes_phi = SHAPE(phi)
+    sizes_Ex = SHAPE(Ex)
+    sizes_Ey = SHAPE(Ey)
+    sizes_pos = SHAPE(kin_data%pos_history)
+    sizes_vel = SHAPE(kin_data%vel_history)
+    sizes_acc = SHAPE(kin_data%acc_history)
     
     !!!! Create the file, overwriting if it exists
     ierr = nf90_create(filename, NF90_CLOBBER, file_id)
@@ -75,17 +66,17 @@ MODULE netcdf_write
     END IF
 
     !!!! Add run datas to global attribute
-    ierr = nf90_put_att(file_id,NF90_GLOBAL,"N",r_d%run_data_N)
+    ierr = nf90_put_att(file_id,NF90_GLOBAL,"nx",r_d%run_data_N)
     IF (ierr /= nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
-    ierr = nf90_put_att(file_id,NF90_GLOBAL,"T",r_d%run_data_N)
+    ierr = nf90_put_att(file_id,NF90_GLOBAL,"ny",r_d%run_data_N)
     IF (ierr /= nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
     END IF
-    ierr = nf90_put_att(file_id,NF90_GLOBAL,"init",r_d%run_data_init)
+    ierr = nf90_put_att(file_id,NF90_GLOBAL,"problem",r_d%run_data_init)
     IF (ierr /= nf90_noerr) THEN
       PRINT*, TRIM(nf90_strerror(ierr))
       RETURN
