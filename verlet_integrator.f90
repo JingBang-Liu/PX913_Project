@@ -69,7 +69,7 @@ CONTAINS
     INTEGER :: i, time, cellx, celly ! number of time-steps and loop variables
     INTEGER, DIMENSION(2) :: dims
     dims = SHAPE(Ex)
-   
+    
     ! the initial data.
     pos_x = init_pos(1)
     pos_y = init_pos(2)

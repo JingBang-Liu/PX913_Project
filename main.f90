@@ -1,5 +1,5 @@
 ! File name: main.f90
-! Author: JingBang Liu
+! Author: JingBang Liu and Fynn James-Lucas
 ! Notes: Example of verlet integration use.
 
 PROGRAM main
@@ -45,17 +45,17 @@ PROGRAM main
   ! dx, dy = grid discretization
   ! dt = time step
   ! time = number of time steps
-
+  
   CALL parse_args() 
   nx_succ=get_arg('nx', nx)
   ny_succ=get_arg('ny', ny)
   problem_succ=get_arg('problem', problem)
 
-  if (nx_succ .AND. ny_succ .AND. problem_succ) then
-    print*, "Command Line Arguments Passed"
-  else 
-    print*, "Command Line Arguments Missing"
-  end if
+  IF (nx_succ .AND. ny_succ .AND. problem_succ) then
+    PRINT*, "Command Line Arguments Passed"
+  ELSE 
+    PRINT*, "Command Line Arguments Missing"
+  END IF
 
   r_d%run_data_nx = nx
   r_d%run_data_ny = ny
@@ -76,11 +76,25 @@ PROGRAM main
   CALL potential(phi, nx, ny, rho, dx, dy)
   CALL field(Ex, Ey, phi, dx, dy, nx, ny)
   
-  dt = 0.01
+  dt = 0.01_REAL64
   time = 1000
-     
-  CALL fillType(kin_data, time)
   
+  SELECT CASE (problem)
+    CASE ("null")
+      init_pos=(/0.0_REAL64, 0.0_REAL64/)
+      init_vel=(/0.1_REAL64, 0.1_REAL64/)
+
+    CASE ("single")
+      init_pos=(/0.1_REAL64, 0.0_REAL64/)
+      init_vel=(/0.0_REAL64, 0.0_REAL64/)
+
+    CASE ("double")
+      init_pos=(/0.0_REAL64, 0.5_REAL64/)
+      init_vel=(/0.0_REAL64, 0.0_REAL64/)
+  END SELECT
+
+  CALL fillType(kin_data, time)
+    
   ! time has to be allocated before fillType (see initializations)
   CALL verlet(kin_data, Ex, Ey, init_pos, init_vel, dx, dy, dt, time)
 
