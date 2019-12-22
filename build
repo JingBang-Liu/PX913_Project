@@ -1,5 +1,13 @@
 #!/bin/bash
 
+####### This is a script to compile the codes into a executable program named 'main' The program
+####### generates a uniform grid of size nx ny, computes the electric field and calculates the 
+####### trajectory of an electron travelling in the field. This script also automatically run
+####### the program using default parameter settings: nx=100, ny=100, problem=single, then
+####### read the saved data and generate plots.
+
+## author: JingBang Liu
+
 ## This script is copied and modified from Chris and Heather's example script to adapt to our
 ## purpose
 
