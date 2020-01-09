@@ -1,6 +1,5 @@
 ! File name: main.f90
-! Author: JingBang Liu and Fynn James-Lucas
-! Notes: Example of verlet integration use.
+! Author: JingBang Liu, Fynn James-Lucas and  
 
 PROGRAM main
   USE kinds
@@ -46,6 +45,7 @@ PROGRAM main
   ! dt = time step
   ! time = number of time steps
   
+  ! Extrac nx, ny and problem from command line
   CALL parse_args() 
   nx_succ=get_arg('nx', nx)
   ny_succ=get_arg('ny', ny)
@@ -57,6 +57,7 @@ PROGRAM main
     PRINT*, "Command Line Arguments Missing"
   END IF
 
+  ! Write information from command line into run_data
   r_d%run_data_nx = nx
   r_d%run_data_ny = ny
   r_d%run_data_problem = problem
@@ -66,12 +67,14 @@ PROGRAM main
   ALLOCATE( Ex(nx, ny) )
   ALLOCATE( Ey(nx, ny) )
  
+  ! Create axis
   CALL create_axis(x, nx, xrange, 1)
   CALL create_axis(y, ny, yrange, 1)
 
   dx=real(xrange(2)-xrange(1))/(real(nx)-1.0)
   dy=real(yrange(2)-yrange(1))/(real(ny)-1.0)
 
+  ! Calculate charge, potential and field
   CALL charge(rho, nx ,ny, problem, x, y)
   CALL potential(phi, nx, ny, rho, dx, dy)
   CALL field(Ex, Ey, phi, dx, dy, nx, ny)
@@ -98,16 +101,8 @@ PROGRAM main
   ! time has to be allocated before fillType (see initializations)
   CALL verlet(kin_data, Ex, Ey, init_pos, init_vel, dx, dy, dt, time)
 
-  ! access the values like this:
-  ! kin_data%pos_history(1, i), kin_data%vel_history(1, i), kin_data%acc_history(1, i)
   ! NetCDF section
   CALL write_electrostatics(rho,phi,Ex,Ey,kin_data,r_d,filename,ierr)
-  !DO i = 1, time
-  !   PRINT*, kin_data%pos_history(1, i), kin_data%pos_history(2, i)
-  !END DO
-  !PRINT*, Ex
-  !PRINT*, Ey
-
      
   ! deallocates the arrays associated with the calledtype.
   CALL emptyType(kin_data)

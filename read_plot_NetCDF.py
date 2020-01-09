@@ -1,3 +1,5 @@
+# Author: JingBang Liu
+
 import netCDF4 as NC
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,20 +14,22 @@ def transfer_axes(M):
 			N[i,j] = M[j,s[1]-1-i]
 	return N
 
-
+# Import data from netCDF file
 dat = NC.Dataset("electrostatics_data.nc","r",format="NETCDF4")
 
-#print(dat.__dict__)
-#print(dat.variables['rho_charge_density'])
+# Extract data that we are going to use
 Ex = dat.variables['Ex_field_intensity']
 Ey = dat.variables['Ey_field_intensity']
 pos = dat.variables['particle_position']
 
+# create axis for pcolor
 x_axis = np.linspace(-1,1,100)
 y_axis = np.linspace(-1,1,100)
 
+# show two plots in one window
 fig, (ax0,ax1) = plt.subplots(1,2)
 
+# plot
 c = ax0.pcolor(x_axis,y_axis,transfer_axes(Ex),cmap='RdBu',)
 fig.colorbar(c,ax=ax0)
 ax0.set_title('Ex')
