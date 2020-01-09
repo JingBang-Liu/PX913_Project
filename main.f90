@@ -1,5 +1,5 @@
 ! File name: main.f90
-! Author: JingBang Liu, Fynn James-Lucas and  
+! Authors: JingBang Liu, Fynn James-Lucas and Aravinthen Rajkumar
 
 PROGRAM main
   USE kinds
